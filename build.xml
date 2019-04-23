@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+    Document   : build.xml
+    Created on : October 22, 2010, 8:32 AM
+    Author     : wsg4w
+    Description:
+        Purpose of the document follows.
+-->
+
+<project name="FalmouthTheme" basedir=".">
+
+    <description>Falmouth theme for Omeka framework</description>
+
+    <property name="project.name" value="falmouth-theme" />
+    <property name="build.dir" value="build" />
+    <property name="dist.dir" value="dist" />
+    <property name="test.dir" value="tests" />
+
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+      <classpath>
+        <pathelement location="${basedir}/build/tools/ant-contrib-1.0b3.jar" />
+      </classpath>
+    </taskdef>
+
+    <property environment="ENV" />
+
+    <!-- load property files -->
+    <properties file="build/config/project.properties" />
+    <properties file="build/config/default.properties" />
+
+    <!-- merge the stylesheet properties -->
+    <var name="stylesheet-files" value="${file.default.stylesheets}, ${file.stylesheets}" />
+
+
+
+    <!-- properties for creating tarball -->
+    <tstamp />
+    <property name="now" value="${DSTAMP}-${TSTAMP}" />
+    <property name="tar" value="${project.name}-${now}.tar" />
+    <property name="gzip" value="${tar}.gz" />
+
+    <target name="clean" description="Clean the build directory">
+        <delete dir="${build.dir}" />
+        <delete dir="${dist.dir}" />
+    </target>
+
+    <target name="setup" description="Create the directory structure for the
+        documentation">
+        <!-- create the build directories -->
+        <mkdir dir="${build.dir}/api" />
+        <mkdir dir="${build.dir}/logs" />
+    </target>
+
+    <target name="dist-setup" description="Create the distribution directory">
+        <mkdir dir="${dist.dir}" />
+    </target>
+
+    <target name="package" depends="clean, dist-setup" description="Create a gzipped tarball
+        of the theme for distribution">
+       
+        <echo message="Compressing files..." />
+        
+        <tar destfile="${dist.dir}/${project.name}-${now}.tar"
+            basedir="${basedir}"
+            excludes="${build.dir}/**,${dist.dir}/**,${test.dir}/**,
+                nbproject/**,build.xml" />
+
+        <echo message="gzipping tarball..." />
+        <gzip zipfile="${dist.dir}/${gzip}" src="${dist.dir}/${tar}" />
+        <!-- clean up -->
+        <echo message="cleaning up..." />
+        <delete file="${dist.dir}/${tar}" />
+    </target>
+
+    <target name="package-docs" depends="phpdoc, dist-setup" description="Create 
+        a gzipped package of the documentation">
+
+        <echo message="Compressing documentation" />
+        <property name="docfile" value="${project.name}-docs-${now}.tar" />
+        <property name="zipfile" value="${docfile}.gz" />
+
+        <tar destfile="${dist.dir}/${docfile}"
+            basedir="${build.dir}/api" />
+
+        <gzip zipfile="${dist.dir}/${zipfile}" src="${dist.dir}/${docfile}" />
+        <delete file="${dist.dir}/${docfile}" />
+
+    </target>
+
+    <!-- Generate checkstyle.xml -->
+    <target name="phpcs" depends="setup">
+
+        <echo message="Running syntax checker on codebase..." />
+
+        <exec executable="phpcs" output="/dev/null">
+             <arg line="--report=checkstyle
+                        --extensions=php
+                        --ignore=*/tests/*,*/dist/*,*/build/*
+                        --report-file=${build.dir}/logs/checkstyle.xml
+                        --standard=Zend
+                        ${basedir}" />
+        </exec>
+    </target>
+
+    <target name="phpunit" depends="setup" description="run phpunit tests">
+        
+    </target>
+
+    <target name="phpdoc" depends="setup" description="Generate programming
+        documentation with PHPDoc">
+        <!--
+            PHPDoc generates documentation for your project. See 
+            http://www.phpdoc.org for configuration/usage examples.
+
+            To generate different outputs, try any (or all) of the following
+
+            -o HTML:frames:earthli,HTML:Smarty:PHP,HTML:frames:phphtmllib,HTML:frames:phpedit,PDF:default:default
+        -->
+        <exec executable="phpdoc">
+            <arg line="-o HTML:frames:earthli -d ${basedir} -t ${build.dir}/api -i tests/,dist/,build/" />
+        </exec>
+    </target>
+
+</project>
